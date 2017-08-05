@@ -1,31 +1,28 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
+from matplotlib import pyplot as plt
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.utils import to_categorical
-from keras.optimizers import RMSprop
-import tensorflow as tf
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
-df = pd.read_csv('titanic_train.csv')
-df_test = pd.read_csv('titanic_test.csv')
+df = pd.read_csv('train.csv')
+df_test = pd.read_csv('test.csv')
 
 df['Sex'] = df['Sex'].map({'male': 0, 'female': 1}).astype(int)
 df_test['Sex'] = df_test['Sex'].map({'male': 0, 'female': 1}).astype(int)
+df['Embarked'].fillna('S', inplace=True)
 df['Embarked'] = df['Embarked'].map({'S': 0, 'C': 1, 'Q': 2}).astype(int)
+df_test['Embarked'].fillna('S', inplace=True)
 df_test['Embarked'] = df_test['Embarked'].map(
     {'S': 0, 'C': 1, 'Q': 2}).astype(int)
 df['Has_Cabin'] = df["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
 df_test['Has_Cabin'] = df_test["Cabin"].apply(
     lambda x: 0 if type(x) == float else 1)
-
 
 encoder = LabelEncoder()
 df_board = df['Embarked'].apply(str)
@@ -54,29 +51,55 @@ X_test = df_test.drop(['PassengerId', 'Ticket',
                        'Name', 'Cabin', 'Embarked'], axis=1)
 
 
-batch_size = 128
-num_classes = 2
-epochs = 2
+def plot_roc_curve(fpr, tpr, label=None):
+    plt.plot(fpr, tpr, linewidth=2, label=label)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('False Positive Rate', fontsize=16)
+    plt.ylabel('True Positive Rate', fontsize=16)
 
-y = to_categorical(y, num_classes)
 
-model = Sequential()
-model.add(Dense(512, activation='relu', input_shape=(7,)))
-model.add(Dropout(0.2))
-model.add(Dense(2, activation='softmax'))
+def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
+    plt.plot(thresholds, precisions[:-1], "b--",
+             label="Precision", linewidth=2)
+    plt.plot(thresholds, recalls[:-1], "g-", label="Recall", linewidth=2)
+    plt.xlabel("Threshold", fontsize=16)
+    plt.legend(loc="upper left", fontsize=16)
+    plt.ylim([0, 1])
 
-model.summary()
+model = SVC(kernel="rbf", C=10)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+model.fit(X_scaled, y)
 
-model.compile(loss='categorical_crossentropy',
-              optimizer=RMSprop(),
-              metrics=['accuracy'])
+scores = cross_val_score(model, X, y,
+                         scoring="neg_mean_squared_error", cv=2,
+                         verbose=1, n_jobs=-1)
 
-history = model.fit(X, y,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    verbose=1)
+rmse_scores = np.sqrt(-scores)
+rmse_scores.mean()
+rmse_scores.std()
 
-ytest = model.predict(X_test)
+
+y_scores = cross_val_predict(model, X, y, cv=3)
+
+precisions, recalls, thresholds = precision_recall_curve(y, y_scores)
+
+plt.figure(figsize=(8, 4))
+plot_precision_recall_vs_threshold(precisions, recalls, thresholds)
+plt.xlim([0, 1])
+plt.show()
+
+fpr, tpr, thresholds = roc_curve(y, y_scores)
+
+plt.figure(figsize=(8, 6))
+plot_roc_curve(fpr, tpr)
+plt.show()
+
+roc_auc_score(y, y_scores)
+X_test_scaled = scaler.fit_transform(X_test)
+
+ytest = model.predict(X_test_scaled)
 df_test['Survived'] = ytest
 print('Test shape OK') if df_test.shape[0] == ytest.shape[0] else print('Oops')
 df_test[['PassengerId', 'Survived']].to_csv(
