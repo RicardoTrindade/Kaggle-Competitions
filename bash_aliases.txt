@@ -1,0 +1,6 @@
+# Docker aliases
+alias docker_compose="docker-compose up -d tensorflow"
+alias docker_bash="docker exec -it kagglecompetitions_tensorflow_1 bash"
+alias docker_stop="docker stop kagglecompetitions_tensorflow_1"
+
+alias ll ="ls -l"

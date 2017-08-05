@@ -1,18 +1,11 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import cross_val_predict
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import roc_curve
-from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import StandardScaler
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.utils import to_categorical
-from keras.optimizers import RMSprop
-import tensorflow as tf
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 df = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -62,6 +55,7 @@ epochs = 50
 y = to_categorical(y, num_classes)
 
 model = Sequential()
+model.add(Dense(20, activation='relu', input_shape=(7,)))
 model.add(Dense(10, activation='relu', input_shape=(7,)))
 model.add(Dense(2, activation='softmax'))
 
@@ -72,12 +66,15 @@ model.compile(loss='mean_squared_error',
               metrics=['accuracy'])
 X = np.asarray(X)
 y = np.asarray(y)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 history = model.fit(X, y,
                     batch_size=batch_size,
                     epochs=epochs,
                     verbose=1)
 
 X_test = np.asarray(X_test)
+X_test_scaled = scaler.fit_transform(X_test)
 ytest = model.predict(X_test)
 predict = np.round(model.predict(X_test))
 titanic_sub=pd.concat([df_test[["PassengerId"]], predictions], axis = 1)
