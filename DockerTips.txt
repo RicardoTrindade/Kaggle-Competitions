@@ -1,0 +1,7 @@
+docker build ./
+docker-compose up -d tensorflow
+docker exec -it docker_tensorflow_1 bash # Logs into tensor flow shell
+
+192.168.99.100:5001 # now login with the token
+
+pip install keras # In case you need it
