@@ -14,12 +14,14 @@ import tensorflow as tf
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
-df = pd.read_csv('titanic_train.csv')
-df_test = pd.read_csv('titanic_test.csv')
+df = pd.read_csv('train.csv')
+df_test = pd.read_csv('test.csv')
 
 df['Sex'] = df['Sex'].map({'male': 0, 'female': 1}).astype(int)
 df_test['Sex'] = df_test['Sex'].map({'male': 0, 'female': 1}).astype(int)
+df['Embarked'].fillna('S', inplace=True)
 df['Embarked'] = df['Embarked'].map({'S': 0, 'C': 1, 'Q': 2}).astype(int)
+df_test['Embarked'].fillna('S', inplace=True)
 df_test['Embarked'] = df_test['Embarked'].map(
     {'S': 0, 'C': 1, 'Q': 2}).astype(int)
 df['Has_Cabin'] = df["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
@@ -54,30 +56,31 @@ X_test = df_test.drop(['PassengerId', 'Ticket',
                        'Name', 'Cabin', 'Embarked'], axis=1)
 
 
-batch_size = 128
+batch_size = 3
 num_classes = 2
-epochs = 2
-
+epochs = 50
 y = to_categorical(y, num_classes)
 
 model = Sequential()
-model.add(Dense(512, activation='relu', input_shape=(7,)))
-model.add(Dropout(0.2))
+model.add(Dense(10, activation='relu', input_shape=(7,)))
 model.add(Dense(2, activation='softmax'))
 
 model.summary()
 
-model.compile(loss='categorical_crossentropy',
-              optimizer=RMSprop(),
+model.compile(loss='mean_squared_error',
+              optimizer='adam',
               metrics=['accuracy'])
-
+X = np.asarray(X)
+y = np.asarray(y)
 history = model.fit(X, y,
                     batch_size=batch_size,
                     epochs=epochs,
                     verbose=1)
 
+X_test = np.asarray(X_test)
 ytest = model.predict(X_test)
-df_test['Survived'] = ytest
-print('Test shape OK') if df_test.shape[0] == ytest.shape[0] else print('Oops')
-df_test[['PassengerId', 'Survived']].to_csv(
-    'titanic_submission.csv.gz', index=False, compression='gzip')
+predict = np.round(model.predict(X_test))
+titanic_sub=pd.concat([df_test[["PassengerId"]], predictions], axis = 1)
+titanic_sub=titanic_sub.rename(columns={0:'Survived'})
+titanic_sub.head()
+titanic_sub[['PassengerId', 'Survived']].to_csv("titanic_sub.csv", index=False)
