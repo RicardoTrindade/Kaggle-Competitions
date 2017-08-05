@@ -2,8 +2,9 @@ version: '3'
 
 services:
   tensorflow:
-    image: tensorflow/tensorflow:1.3.0-rc1
+    image: tensorflow/tensorflow:1.3.0-rc2
     volumes: 
-      - ./Scripts:/usr/scripts
+      - ./nyc-taxis:/usr/taxis
+      - ./Titanic:/usr/titanic
     ports:
       - 5001:8888
