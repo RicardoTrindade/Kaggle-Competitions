@@ -1,10 +1,12 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.utils import to_categorical
+from sklearn.ensemble import GradientBoostingClassifier
+from matplotlib import pyplot as plt
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_predict
+from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
 
 df = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -20,14 +22,11 @@ df['Has_Cabin'] = df["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
 df_test['Has_Cabin'] = df_test["Cabin"].apply(
     lambda x: 0 if type(x) == float else 1)
 
-
 encoder = LabelEncoder()
 df_board = df['Embarked'].apply(str)
 df_board_test = df_test['Embarked'].apply(str)
 df_board_encoded = encoder.fit_transform(df_board)
 df_board_test_encoded = encoder.fit_transform(df_board_test)
-# df_test['encoded_embark'] = df_board_test_encoded
-# df['encoded_embark'] = df_board_encoded
 df['Age'].isnull().values.any()  # Checks for nans in age and returns true
 df_test['Age'].isnull().values.any()  # Checks for nans in age and returns true
 med = df['Age'].median()
@@ -48,35 +47,39 @@ X_test = df_test.drop(['PassengerId', 'Ticket',
                        'Name', 'Cabin', 'Embarked'], axis=1)
 
 
-batch_size = 3
-num_classes = 2
-epochs = 50
-y = to_categorical(y, num_classes)
+def plot_roc_curve(fpr, tpr, label=None):
+    plt.plot(fpr, tpr, linewidth=2, label=label)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.axis([0, 1, 0, 1])
+    plt.xlabel('False Positive Rate', fontsize=16)
+    plt.ylabel('True Positive Rate', fontsize=16)
 
-model = Sequential()
-model.add(Dense(20, activation='relu', input_shape=(7,)))
-model.add(Dense(10, activation='relu', input_shape=(7,)))
-model.add(Dense(2, activation='softmax'))
 
-model.summary()
+model = GradientBoostingClassifier(
+    min_samples_leaf=5, max_depth=20, n_estimators=300)
+model.fit(X, y)
 
-model.compile(loss='mean_squared_error',
-              optimizer='adam',
-              metrics=['accuracy'])
-X = np.asarray(X)
-y = np.asarray(y)
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-history = model.fit(X, y,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    verbose=1)
+scores = cross_val_score(model, X, y,
+                         scoring="neg_mean_squared_error", cv=10,
+                         verbose=1, n_jobs=-1)
 
-X_test = np.asarray(X_test)
-X_test_scaled = scaler.fit_transform(X_test)
+rmse_scores = np.sqrt(-scores)
+rmse_scores.mean()
+rmse_scores.std()
+
+
+y_scores = cross_val_predict(model, X, y, cv=10)
+
+fpr, tpr, thresholds = roc_curve(y, y_scores)
+
+plt.figure(figsize=(8, 6))
+plot_roc_curve(fpr, tpr)
+plt.show()
+
+roc_auc_score(y, y_scores)
+
 ytest = model.predict(X_test)
-predict = np.round(model.predict(X_test))
-titanic_sub=pd.concat([df_test[["PassengerId"]], predictions], axis = 1)
-titanic_sub=titanic_sub.rename(columns={0:'Survived'})
-titanic_sub.head()
-titanic_sub[['PassengerId', 'Survived']].to_csv("titanic_sub.csv", index=False)
+df_test['Survived'] = ytest
+print('Test shape OK') if df_test.shape[0] == ytest.shape[0] else print('Oops')
+df_test[['PassengerId', 'Survived']].to_csv(
+    'titanic_submission.csv.gz', index=False, compression='gzip')
