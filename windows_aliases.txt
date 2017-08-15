@@ -1,6 +1,7 @@
 @echo off
 echo.
 DOSKEY ls=dir
+DOSKEY project = cd C:\Users\trind\Desktop\Kaggle-Competitions
 
 1. Create a .bat or .cmd file with your DOSKEY commands. (this are my aliases so far)
 2. Run regedit and go to HKEY_CURRENT_USER -> Software -> Microsoft -> Command Processor

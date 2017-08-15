@@ -5,3 +5,5 @@ docker exec -it kagglecompetitions_tensorflow_1 bash # Logs into tensor flow she
 192.168.99.100:5001 # now login with the token
 
 pip install keras # In case you need it
+
+docker build Docker/ -t ricardotrindade/ml-tf #builds 
