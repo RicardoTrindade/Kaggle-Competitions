@@ -20,6 +20,41 @@ df_test.info()
 df['Sex'] = df['Sex'].map({'male': 0, 'female': 1}).astype(int)
 df_test['Sex'] = df_test['Sex'].map({'male': 0, 'female': 1}).astype(int)
 
+df['Title'] = df.Name.str.extract(' ([A-Za-z]+)\.', expand=False)
+pd.crosstab(df['Title'], df['Sex'])
+# Some of these occurences are so rare that they will be replaced by
+# 'Rare' instead
+df['Title'] = df['Title'].replace(['Lady', 'Countess', 'Capt', 'Col',
+                                   'Don', 'Dr', 'Major', 'Rev', 'Sir',
+                                   'Jonkheer', 'Dona'], 'Rare')
+
+df['Title'] = df['Title'].replace('Mlle', 'Miss')
+df['Title'] = df['Title'].replace('Ms', 'Miss')
+df['Title'] = df['Title'].replace('Mme', 'Mrs')
+
+
+df_test['Title'] = df_test.Name.str.extract(' ([A-Za-z]+)\.', expand=False)
+# Some of these occurences are so rare that they will be replaced by
+# 'Rare' instead
+df_test['Title'] = df_test['Title'].replace(['Lady', 'Countess', 'Capt', 'Col',
+                                             'Don', 'Dr', 'Major', 'Rev',
+                                             'Sir', 'Jonkheer',
+                                             'Dona'], 'Rare')
+
+df_test['Title'] = df_test['Title'].replace('Mlle', 'Miss')
+df_test['Title'] = df_test['Title'].replace('Ms', 'Miss')
+df_test['Title'] = df_test['Title'].replace('Mme', 'Mrs')
+
+
+df['Title'] = df['Title'].map({"Mr": 1, "Miss": 2, "Mrs": 3,
+                               "Master": 4, "Rare": 5})
+
+df_test['Title'] = df_test['Title'].map({"Mr": 1, "Miss": 2, "Mrs": 3,
+                                         "Master": 4, "Rare": 5})
+
+df['Title'].fillna(0, inplace=True)
+df_test['Title'].fillna(0, inplace=True)
+
 df['Embarked'].value_counts()
 # Shows that Southampton has the majority of
 # embarks, hence NaNs are filled with S.
@@ -72,9 +107,9 @@ df_test['Fare'].fillna(med, inplace=True)
 
 y = df['Survived']
 X = df.drop(['Survived', 'PassengerId', 'Ticket',
-             'Name', 'Cabin', 'Embarked'], axis=1)
+             'Name', 'Cabin'], axis=1)
 X_test = df_test.drop(['PassengerId', 'Ticket',
-                       'Name', 'Cabin', 'Embarked'], axis=1)
+                       'Name', 'Cabin'], axis=1)
 
 
 def plot_roc_curve(fpr, tpr, label=None):
@@ -93,7 +128,8 @@ def plot_precision_recall_vs_threshold(precisions, recalls, thresholds):
     plt.legend(loc="upper left", fontsize=16)
     plt.ylim([0, 1])
 
-model = SVC(kernel="rbf", C=5)
+
+model = SVC(kernel="rbf", C=3)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 model.fit(X_scaled, y)
@@ -135,3 +171,8 @@ df_test[['PassengerId', 'Survived']].to_csv(
 # Including sibiling information improved from 0.75598 to 0.76077
 # Changing SVM C param from 10 to 5 also improved.
 # AUC score is at ~~0.70
+
+# When applying embarked encoding and using titles ->0.78947
+# AUC score is at 0.71
+
+#Embarked encoding was not being applied...
