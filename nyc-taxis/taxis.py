@@ -6,6 +6,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV
+from sklearn.cluster import MiniBatchKMeans
+
 
 df = pd.read_csv('train.csv')
 df_test = pd.read_csv('test.csv')
@@ -17,10 +19,30 @@ df['pu_hour'] = df.pickup_datetime.dt.hour
 df['weekday'] = df.pickup_datetime.dt.weekday
 df_test['pu_hour'] = df_test.pickup_datetime.dt.hour
 df_test['weekday'] = df_test.pickup_datetime.dt.weekday
+df['store_and_fwd_flag'] = df['store_and_fwd_flag'].map(
+    {'Y': 1, 'N': 0}).astype(int)
+df_test['store_and_fwd_flag'] = df_test[
+    'store_and_fwd_flag'].map({'Y': 1, 'N': 0}).astype(int)
 # df['trip_duration_log'] = df['trip_duration'].apply(np.log)
 # Trip duration in log is normal
 
+coords = np.vstack((df[['pickup_latitude', 'pickup_longitude']].values,
+                    df[['dropoff_latitude', 'dropoff_longitude']].values,
+                    df_test[['pickup_latitude', 'pickup_longitude']].values,
+                    df_test[['dropoff_latitude', 'dropoff_longitude']].values))
 
+sample_ind = np.random.permutation(len(coords))[:500000]
+kmeans = MiniBatchKMeans(
+    n_clusters=100, batch_size=10000).fit(coords[sample_ind])
+
+df.loc[:, 'pickup_cluster'] = kmeans.predict(
+    df[['pickup_latitude', 'pickup_longitude']])
+df.loc[:, 'dropoff_cluster'] = kmeans.predict(
+    df[['dropoff_latitude', 'dropoff_longitude']])
+df_test.loc[:, 'pickup_cluster'] = kmeans.predict(
+    df_test[['pickup_latitude', 'pickup_longitude']])
+df_test.loc[:, 'dropoff_cluster'] = kmeans.predict(
+    df_test[['dropoff_latitude', 'dropoff_longitude']])
 ####################################################
 
 X = np.vstack((df[['pickup_latitude', 'pickup_longitude']],
@@ -126,8 +148,7 @@ X_test = df_test.drop(['id', 'store_and_fwd_flag',
 
 forrest_reg = GradientBoostingRegressor(warm_start=True, verbose=1,
                                     n_estimators=40,
-                                    min_samples_leaf=1,
-                                    n_jobs=2)
+                                    min_samples_leaf=5)
 
 forrest_reg.fit(X, y)
 # param_grid = [{'n_estimators': [3, 10, 30], 'max_depth': [1, 10, 20]}]
