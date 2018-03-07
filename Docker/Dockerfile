@@ -1,6 +1,6 @@
 FROM ubuntu:16.04
 
-MAINTAINER RicardoTrindade <ricardo.trindade743@gmail.com>
+LABEL RicardoTrindade <ricardo.trindade743@gmail.com>
 
 # Pick up some TF dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

@@ -2,9 +2,11 @@ version: '3'
 
 services:
   tensorflow:
-    image: tensorflow/tensorflow:1.3.0-rc2
-    volumes: 
+    image: tensorflow/tensorflow:1.6.0-rc1-py3
+    volumes:
       - ./nyc-taxis:/usr/taxis
       - ./Titanic:/usr/titanic
+      - ./:/notebooks
+      - ./TalkingDataFraud:/usr/fraud
     ports:
       - 5001:8888
