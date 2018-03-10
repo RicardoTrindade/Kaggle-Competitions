@@ -1,5 +1,5 @@
 # Kaggle Competitions
 ## This repo contains the code used in Kaggle challenges.
 
-When using tensorflow, build its docker image, as I had a lot of issues when
-using Windows 
+To get up and running with docker, tensorflow and python libs 
+`docker-compose run --rm --service-ports tensorflow`
