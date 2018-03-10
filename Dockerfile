@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM tensorflow/tensorflow:1.6.0-py3
 
 LABEL RicardoTrindade <ricardo.trindade743@gmail.com>
 
@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpng12-dev \
         libzmq3-dev \
         pkg-config \
-        python \
-        python-dev \
         rsync \
         wget \
         software-properties-common \
@@ -38,8 +36,6 @@ RUN pip --no-cache-dir install \
         keras \
         && \
     python -m ipykernel.kernelspec
-
-# RUN ln -s /usr/bin/python3 /usr/bin/python#
 
 # TensorBoard
 EXPOSE 6006

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   tensorflow:
-    image: tensorflow/tensorflow:1.6.0-rc1-py3
+    build: .
     volumes:
       - ./nyc-taxis:/usr/taxis
       - ./Titanic:/usr/titanic

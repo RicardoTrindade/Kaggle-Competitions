@@ -7,6 +7,7 @@ df_test = pd.read_csv('test.csv')
 df.info()
 df_test.info()
 
+
 # Mapping no alley to 0, other values to +1 and -1
 df['Alley'].value_counts()
 
